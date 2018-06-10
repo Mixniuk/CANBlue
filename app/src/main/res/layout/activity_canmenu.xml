@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:orientation="vertical" >
+
+  <TextView
+    android:id="@+id/viewInfo"
+    android:layout_width="match_parent"
+    android:layout_height="50dp"
+    android:gravity="top"
+    android:background="#eee"/>
+
+  <LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal" >
+
+    <ScrollView
+      xmlns:android="http://schemas.android.com/apk/res/android"
+      android:id="@+id/activity_main"
+      android:layout_width="wrap_content"
+      android:layout_height="match_parent">
+
+      <TextView
+        android:layout_marginTop="5dp"
+        android:id="@+id/receiveInfo"
+        android:layout_width="180dp"
+        android:layout_height="match_parent"
+        android:gravity="top"
+        android:background="#eee"/>
+
+    </ScrollView>
+
+    <LinearLayout
+      xmlns:android="http://schemas.android.com/apk/res/android"
+      android:layout_width="wrap_content"
+      android:layout_height="match_parent"
+      android:orientation="vertical" >
+
+      <Button
+        android:text="Очистить"
+        android:layout_height="wrap_content"
+        android:layout_width="190dp"
+        android:onClick="clearText"/>
+      <Button
+        android:text="Отправить пакет"
+        android:layout_height="wrap_content"
+        android:layout_width="190dp"
+        android:onClick="sendPackageOn"/>
+      <Button
+        android:text="Изменить скорость"
+        android:layout_height="wrap_content"
+        android:layout_width="190dp"
+        android:onClick="changeSpeedOn"/>
+      <Button
+        android:text="Настроить фильтр"
+        android:layout_height="wrap_content"
+        android:layout_width="190dp"
+        android:onClick="setFilterOn"/>
+
+      <Button
+        android:text="Отключится"
+        android:layout_marginTop="50dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="disconnect"/>
+
+    </LinearLayout>
+
+  </LinearLayout>
+
+</LinearLayout>

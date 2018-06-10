@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <Button
+      android:id="@+id/HC"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="Подключится"
+      android:layout_gravity="right"
+      android:onClick="connectToHC"/>
+
+    <Button
+      android:id="@+id/exit"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="exit"
+      android:layout_gravity="right"
+      android:onClick="exit"/>
+
+    <TextView
+      android:id="@+id/viewInfo"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_gravity="right"
+      android:textSize="20sp"
+      android:text="textview1" />
+
+    <ListView
+      android:id="@+id/deviceList"
+      android:layout_gravity="right"
+      android:layout_width="200dp"
+      android:layout_height="match_parent">
+    </ListView>
+
+</LinearLayout>

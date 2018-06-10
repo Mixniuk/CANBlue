@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:orientation="vertical" >
+
+  <TextView
+    android:text="Выберите скорость"
+    android:textSize="25sp"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"/>
+
+  <RadioGroup xmlns:android="http://schemas.android.com/apk/res/android"
+  android:id="@+id/radios"
+  android:layout_width="wrap_content"
+  android:layout_height="wrap_content"
+  android:orientation="vertical"
+  android:layout_gravity="center">
+
+    <RadioButton android:id="@+id/veryFast"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="1000"
+      android:onClick="onRadioButtonClicked"/>
+    <RadioButton android:id="@+id/fast"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="500"
+      android:checked="true"
+      android:onClick="onRadioButtonClicked"/>
+    <RadioButton android:id="@+id/moderate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="250"
+        android:onClick="onRadioButtonClicked"/>
+    <RadioButton android:id="@+id/low"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="125"
+        android:onClick="onRadioButtonClicked"/>
+
+  </RadioGroup>
+
+  <Button
+  android:text="Изменить"
+  android:layout_width="190dp"
+  android:layout_height="wrap_content"
+  android:onClick="sendSpeed"
+  android:layout_gravity="center"/>
+
+  <Button
+    android:text="Назад"
+    android:layout_width="190dp"
+    android:layout_height="wrap_content"
+    android:onClick="goBack"
+    android:layout_gravity="center"/>
+
+  <TextView android:id="@+id/info"
+    android:text="info"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content" />
+
+</LinearLayout>
