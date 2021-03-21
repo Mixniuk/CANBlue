@@ -27,8 +27,8 @@ public class CANMenu extends AppCompatActivity {
 	Handler h;
 
 	final int BASE_MESSAGE = 0;
-	final int SPEED_MESSAGE = 1;
-	final int FILTER_MESSAGE = 2;        // Статус для Handler
+//	final int SPEED_MESSAGE = 1;
+	final int CAN_SETTINGS_MESSAGE = 2;        // Статус для Handler
 	final int SEND_MESSAGE = 3;
 
 	private int mode;
@@ -51,16 +51,12 @@ public class CANMenu extends AppCompatActivity {
 		btAdapter = BluetoothAdapter.getDefaultAdapter();
 		h = new Handler() {
 			public void handleMessage(android.os.Message msg) {
-				viewInfo.setText("зашел");
 				switch (msg.what) {
 					case BASE_MESSAGE:
 						baseMode();
 						break;
-					case SPEED_MESSAGE:
-						goChangeSpeed();
-						break;
-					case FILTER_MESSAGE:
-						goSetFilter();
+					case CAN_SETTINGS_MESSAGE:
+						goSetCANSettings();
 						break;
 					case SEND_MESSAGE:
 						goSendPackage();
@@ -86,16 +82,7 @@ public class CANMenu extends AppCompatActivity {
 
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data){
-		if(requestCode==FILTER_MESSAGE){
-			if(resultCode==RESULT_OK){
-				mConnectedThread.write(197);
-				sendData(data.getIntArrayExtra("dataFilter"));
-			}
-			else{
-				viewInfo.setText("Ошибка доступа");
-			}
-			mode = 0;
-		}else if(requestCode==SEND_MESSAGE){
+		if(requestCode==SEND_MESSAGE){
 			if(resultCode==RESULT_OK){
 				mConnectedThread.write(193);
 				sendData(data.getIntArrayExtra("dataPackage"));
@@ -105,10 +92,10 @@ public class CANMenu extends AppCompatActivity {
 			}
 			mode = 0;
 
-		}else if(requestCode==SPEED_MESSAGE){
+		}else if(requestCode==CAN_SETTINGS_MESSAGE){
 			if(resultCode==RESULT_OK){
 				mConnectedThread.write(196);
-				sendData(data.getIntArrayExtra("dataSpeed"));
+				sendData(data.getIntArrayExtra("dataCAN"));
 			}
 			else{
 				viewInfo.setText("Ошибка доступа");
@@ -119,16 +106,16 @@ public class CANMenu extends AppCompatActivity {
 		}
 	}
 
-	private void goChangeSpeed(){
-		pauseReceiver();
-		Intent intent = new Intent(this, SpeedActivity.class);
-		startActivityForResult(intent, SPEED_MESSAGE);
-	}
+	private void goSetCANSettings(){
+		try{
+			pauseReceiver();
+			Intent intent = new Intent(this, CANSettingsActivity.class);
+			startActivityForResult(intent, CAN_SETTINGS_MESSAGE);
+		}catch(Exception e){
+			testsb.append(e.getMessage() + "\n");
+			testView.setText(testsb.toString());
+		}
 
-	private void goSetFilter(){
-		pauseReceiver();
-		Intent intent = new Intent(this, FilterActivity.class);
-		startActivityForResult(intent, FILTER_MESSAGE);
 	}
 
 	private void goSendPackage(){
@@ -161,11 +148,7 @@ public class CANMenu extends AppCompatActivity {
 		receiveInfo.setText("");
 	}
 
-	public void changeSpeedOn(View view){
-		mode = 1;
-	}
-
-	public void setFilterOn(View view){
+	public void setCANSettings(View view){
 		mode = 2;
 	}
 
@@ -213,14 +196,10 @@ public class CANMenu extends AppCompatActivity {
 		int byte2 = data.remove(0);
 		int length = byte2&15;
 
-		testsb.append(byte1 + "\n");
-		testsb.append(byte2 + "\n");
-
 		short[] bytes = new short[8];
 		while(data.size() < length)viewInfo.setText("Ожидание приема. Осталось " + am_b + " пакетов.");
 		for(int i = 0; i < length; i++){
 			bytes[i] = data.remove(0).shortValue();
-			testsb.append(bytes[i] + "\n");
 		}
 		byte1 <<=3;
 		byte1 |= byte2>>5;
@@ -236,8 +215,6 @@ public class CANMenu extends AppCompatActivity {
 		sb.delete(0, sb.length());
 		mode = 0;
 
-		testsb.append("--------\n");
-		testView.setText(testsb.toString());
 	}
 
 	private void baseMode(){
@@ -294,10 +271,10 @@ public class CANMenu extends AppCompatActivity {
 							h.obtainMessage(BASE_MESSAGE).sendToTarget();
 							break;
 						case 1:
-							h.obtainMessage(SPEED_MESSAGE).sendToTarget();
+
 							break;
 						case 2:
-							h.obtainMessage(FILTER_MESSAGE).sendToTarget();
+							h.obtainMessage(CAN_SETTINGS_MESSAGE).sendToTarget();
 							break;
 						case 3:
 							h.obtainMessage(SEND_MESSAGE).sendToTarget();

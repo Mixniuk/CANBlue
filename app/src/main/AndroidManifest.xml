@@ -19,11 +19,9 @@
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
     </activity>
-    <activity android:name=".RxTx" />
     <activity android:name=".CANMenu" />
-    <activity android:name=".FilterActivity" />
+    <activity android:name=".CANSettingsActivity" />
     <activity android:name=".SendPackageActivity" />
-    <activity android:name=".SpeedActivity"></activity>
   </application>
 
 </manifest>

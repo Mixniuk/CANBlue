@@ -47,16 +47,12 @@
         android:layout_height="wrap_content"
         android:layout_width="190dp"
         android:onClick="sendPackageOn"/>
+
       <Button
-        android:text="Изменить скорость"
+        android:text="Настроить CAN"
         android:layout_height="wrap_content"
         android:layout_width="190dp"
-        android:onClick="changeSpeedOn"/>
-      <Button
-        android:text="Настроить фильтр"
-        android:layout_height="wrap_content"
-        android:layout_width="190dp"
-        android:onClick="setFilterOn"/>
+        android:onClick="setCANSettings"/>
 
       <Button
           android:layout_width="match_parent"
