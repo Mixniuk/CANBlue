@@ -9,6 +9,7 @@ import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,7 +23,7 @@ import java.util.concurrent.ExecutionException;
 
 public class CANMenu extends AppCompatActivity {
 
-	TextView viewInfo, receiveInfo;
+	TextView viewInfo, receiveInfo, testView;
 	Handler h;
 
 	final int BASE_MESSAGE = 0;
@@ -35,6 +36,7 @@ public class CANMenu extends AppCompatActivity {
 	private BluetoothAdapter btAdapter = null;
 	private BluetoothSocket btSocket = null;
 	private StringBuilder sb = new StringBuilder();
+	private StringBuilder testsb = new StringBuilder();
 	private ConnectedThread mConnectedThread;
 	private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
@@ -42,7 +44,9 @@ public class CANMenu extends AppCompatActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_canmenu);
-	  viewInfo = (TextView) findViewById(R.id.viewInfo);
+
+		testView = (TextView) findViewById(R.id.testView);
+	  	viewInfo = (TextView) findViewById(R.id.viewInfo);
 		receiveInfo = (TextView) findViewById(R.id.receiveInfo);
 		btAdapter = BluetoothAdapter.getDefaultAdapter();
 		h = new Handler() {
@@ -207,12 +211,16 @@ public class CANMenu extends AppCompatActivity {
 		while(data.size() < 2)viewInfo.setText("Ожидание приема. Осталось " + am_b + " пакетов.");
 		int byte1 = data.remove(0);
 		int byte2 = data.remove(0);
-		int length = byte2&7;
+		int length = byte2&15;
 
-		byte[] bytes = new byte[8];
+		testsb.append(byte1 + "\n");
+		testsb.append(byte2 + "\n");
+
+		short[] bytes = new short[8];
 		while(data.size() < length)viewInfo.setText("Ожидание приема. Осталось " + am_b + " пакетов.");
 		for(int i = 0; i < length; i++){
-			bytes[i] = data.remove(0).byteValue();
+			bytes[i] = data.remove(0).shortValue();
+			testsb.append(bytes[i] + "\n");
 		}
 		byte1 <<=3;
 		byte1 |= byte2>>5;
@@ -227,14 +235,23 @@ public class CANMenu extends AppCompatActivity {
 		receiveInfo.setText(sb.toString());
 		sb.delete(0, sb.length());
 		mode = 0;
+
+		testsb.append("--------\n");
+		testView.setText(testsb.toString());
 	}
 
 	private void baseMode(){
 		int amount_bytes = getAmountByte();
+
 		if(amount_bytes > 0){
 			viewInfo.setText("Пакетов: " + amount_bytes + "; Начат прием.");
 			pauseReceiver();
-			ReceiveBytes(amount_bytes);
+			try{
+				ReceiveBytes(amount_bytes);
+			}catch (Exception e){
+				testView.setText(e.getMessage().toString());
+			}
+
 		} else if(amount_bytes == 0){
 			viewInfo.setText("Нет пакетов");
 		} else {
@@ -250,7 +267,7 @@ public class CANMenu extends AppCompatActivity {
 			long startTime = System.currentTimeMillis();
 			long elapsedTime = 0;
 
-			while (elapsedTime < 1000) {
+			while (elapsedTime < 5000) {
 				elapsedTime = (new Date()).getTime() - startTime;
 				if (data.size() > 0) {
 					return data.remove(0) - 160;
@@ -322,7 +339,10 @@ public class CANMenu extends AppCompatActivity {
 			while (true) {
 				try {
 					while(mmInStream.available()>0){
+//						bytes = mmInStream.read();
+//						if(bytes != 160) testsb.append(bytes + "\n");
 						data.add(mmInStream.read());
+						SystemClock.sleep(1);
 					}
 //					bytes = mmInStream.read(buffer);
 //					h.obtainMessage(RECIEVE_MESSAGE, bytes, -1, buffer).sendToTarget();
