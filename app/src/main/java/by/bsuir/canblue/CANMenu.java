@@ -88,7 +88,7 @@ public class CANMenu extends AppCompatActivity {
 				sendData(data.getIntArrayExtra("dataPackage"));
 			}
 			else{
-				viewInfo.setText("Ошибка доступа");
+				viewInfo.setText("Ошибка onActivityResult 1");
 			}
 			mode = 0;
 
@@ -98,7 +98,7 @@ public class CANMenu extends AppCompatActivity {
 				sendData(data.getIntArrayExtra("dataCAN"));
 			}
 			else{
-				viewInfo.setText("Ошибка доступа");
+				viewInfo.setText("Ошибка onActivityResult 2");
 			}
 			mode = 0;
 		}else{
@@ -171,7 +171,7 @@ public class CANMenu extends AppCompatActivity {
 		try {
 			btSocket = device.createRfcommSocketToServiceRecord(MY_UUID);
 		} catch (IOException e) {
-			viewInfo.setText("Fatal Error: In onResume() and socket create failed: " + e.getMessage() + ".");
+			viewInfo.setText("Error: connectToHC 1: " + e.getMessage() + ".");
 		}
 		btAdapter.cancelDiscovery();
 
@@ -181,7 +181,7 @@ public class CANMenu extends AppCompatActivity {
 			try {
 				btSocket.close();
 			} catch (IOException e2) {
-				viewInfo.setText("Fatal Error: In onResume() and socket create failed: " + e.getMessage() + ".");
+				viewInfo.setText("Error: connectToHC 2: " + e.getMessage() + ".");
 			}
 		}
 		mConnectedThread = new ConnectedThread(btSocket);
@@ -190,29 +190,39 @@ public class CANMenu extends AppCompatActivity {
 	}
 
 	private void ReceiveBytes(int am_b){
-		mConnectedThread.write(195);
-		while(data.size() < 2)viewInfo.setText("Ожидание приема. Осталось " + am_b + " пакетов.");
-		int byte1 = data.remove(0);
-		int byte2 = data.remove(0);
-		int length = byte2&15;
+		int cur_b = 0;
+		while(cur_b < am_b){
 
-		short[] bytes = new short[8];
-		while(data.size() < length)viewInfo.setText("Ожидание приема. Осталось " + am_b + " пакетов.");
-		for(int i = 0; i < length; i++){
-			bytes[i] = data.remove(0).shortValue();
+			mConnectedThread.write(195);
+
+			while(data.size() < 2)viewInfo.setText("Ожидание приема. Осталось " + am_b + " пакетов.");
+			int byte1 = data.remove(0);
+			int byte2 = data.remove(0);
+			int length = byte2&15;
+
+			short[] bytes = new short[8];
+			while(data.size() < length)viewInfo.setText("Ожидание приема. Осталось " + am_b + " пакетов.");
+			for(int i = 0; i < length; i++){
+				bytes[i] = data.remove(0).shortValue();
+			}
+			byte1 <<=3;
+			byte1 |= byte2>>5;
+			sb.append("Id = ").append(Integer.toHexString(byte1)).append("\n");
+			sb.append("DLC = ").append(length).append("\n");
+			for(int i = 0; i<length;i++){
+				sb.append(i).append(". ").append(Integer.toHexString(bytes[i])).append("\n");
+			}
+			viewInfo.setText("Прием " + am_b + "-го пакета окончен.");
+			sb.append("Прием окончен\n\n");
+			sb.append(receiveInfo.getText()).append("\n");
+			receiveInfo.setText(sb.toString());
+			sb.delete(0, sb.length());
+
+			cur_b++;
 		}
-		byte1 <<=3;
-		byte1 |= byte2>>5;
-		sb.append("Id = ").append(Integer.toHexString(byte1)).append("\n");
-		sb.append("DLC = ").append(length).append("\n");
-		for(int i = 0; i<length;i++){
-			sb.append(i).append(". ").append(Integer.toHexString(bytes[i])).append("\n");
-		}
-		viewInfo.setText("Прием " + am_b + "-го пакета окончен.");
-		sb.append("Прием окончен\n\n");
-		sb.append(receiveInfo.getText()).append("\n");
-		receiveInfo.setText(sb.toString());
-		sb.delete(0, sb.length());
+
+
+
 		mode = 0;
 
 	}
@@ -240,25 +250,30 @@ public class CANMenu extends AppCompatActivity {
 	private int getAmountByte(){
 		mConnectedThread.write(194);
 		mode = 4;
+
+		Integer rem;
+
 		try {
 			long startTime = System.currentTimeMillis();
 			long elapsedTime = 0;
 
-			while (elapsedTime < 5000) {
+			while (elapsedTime < 1000) {
 				elapsedTime = (new Date()).getTime() - startTime;
 				if (data.size() > 0) {
-					return data.remove(0) - 160;
+					rem = data.remove(0);
+					if (rem == null) return 0;
+					else return rem;
 				}
 			}
 			return  -1;
 		}catch (Exception e){
-			viewInfo.setText("Fatal Error: In onResume() and socket create failed: " + e.getMessage() + ".");
+			testView.setText("Error: getAmountByte 1: " + e.getMessage() + ".");
 			return -1;
 		}
 	}
 
 	private void errorMessage(Exception e){
-		viewInfo.setText("Fatal Error: In onResume() and socket create failed: " + e.getMessage() + ".");
+		viewInfo.setText("Error: errorMessage 1: " + e.getMessage() + ".");
 	}
 
 	private class ReceiverThread extends Thread{
