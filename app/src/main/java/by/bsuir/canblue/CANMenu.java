@@ -1,71 +1,108 @@
 package by.bsuir.canblue;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.EditText;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 public class CANMenu extends AppCompatActivity {
 
-	TextView viewInfo, receiveInfo, testView;
+	TextView viewInfo, receiveInfo, errorView, addressInfo, connectInfo;
 	Handler h;
+	Button buttonClear, buttonSend, buttonSettings, buttonConnect, buttonDisconnect, buttonExit;
 
-	final int BASE_MESSAGE = 0;
-//	final int SPEED_MESSAGE = 1;
-	final int CAN_SETTINGS_MESSAGE = 2;        // Статус для Handler
-	final int SEND_MESSAGE = 3;
+	static final int BASE_MESSAGE = 0;
+//	static final int SPEED_MESSAGE = 1;
+	static final int CAN_SETTINGS_MESSAGE = 2;        // Статус для Handler
+	static final int SEND_MESSAGE = 3;
 
-	private int mode;
-	private ArrayList<Integer> data = new ArrayList<>();
+	private int mode = 4;
+	private String address = null;
+	private final ArrayList<Integer> data = new ArrayList<>();
 	private BluetoothAdapter btAdapter = null;
-	private BluetoothSocket btSocket = null;
-	private StringBuilder sb = new StringBuilder();
-	private StringBuilder testsb = new StringBuilder();
+	private final StringBuilder sb = new StringBuilder();
+	private final StringBuilder testsb = new StringBuilder();
 	private ConnectedThread mConnectedThread;
+	private ReceiverThread mReceiverThread;
 	private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
+	static class CANMenuHandler extends Handler {
+
+		WeakReference<CANMenu> wrActivity;
+
+		public CANMenuHandler(CANMenu activity) {
+			wrActivity = new WeakReference<>(activity);
+		}
+
+		@Override
+		public void handleMessage(android.os.Message msg) {
+			super.handleMessage(msg);
+			CANMenu activity = wrActivity.get();
+			if (activity != null){
+				switch (msg.what) {
+					case BASE_MESSAGE:
+						activity.baseMode();
+						break;
+					case CAN_SETTINGS_MESSAGE:
+						activity.goSetCANSettings();
+						break;
+					case SEND_MESSAGE:
+						activity.goSendPackage();
+						break;
+				}
+			}
+		}
+	}
+
+
+	@SuppressLint("SetTextI18n")
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_canmenu);
 
-		testView = (TextView) findViewById(R.id.testView);
+		buttonClear = (Button) findViewById(R.id.buttonClear);
+		buttonSend = (Button) findViewById(R.id.buttonSend);
+		buttonSettings = (Button) findViewById(R.id.buttonSettings);
+		buttonConnect = (Button) findViewById(R.id.buttonConnect);
+		buttonDisconnect = (Button) findViewById(R.id.buttonDisconnect);
+		buttonExit = (Button) findViewById(R.id.buttonExit);
+
+		errorView = (TextView) findViewById(R.id.errorView);
 	  	viewInfo = (TextView) findViewById(R.id.viewInfo);
 		receiveInfo = (TextView) findViewById(R.id.receiveInfo);
+		addressInfo = (TextView) findViewById(R.id.addressInfo);
+		connectInfo = (TextView) findViewById(R.id.connectInfo);
 		btAdapter = BluetoothAdapter.getDefaultAdapter();
-		h = new Handler() {
-			public void handleMessage(android.os.Message msg) {
-				switch (msg.what) {
-					case BASE_MESSAGE:
-						baseMode();
-						break;
-					case CAN_SETTINGS_MESSAGE:
-						goSetCANSettings();
-						break;
-					case SEND_MESSAGE:
-						goSendPackage();
-						break;
-				}
-			};
-		};
-		connectToHC();
-		new ReceiverThread().start();
+
+		Bundle arguments = getIntent().getExtras();
+		address = arguments.getString("address");
+		addressInfo.setText("address: " + address);
+
+		h = new CANMenuHandler(this);
+
+		buttonSend.setEnabled(false);
+		buttonSettings.setEnabled(false);
+		buttonDisconnect.setEnabled(false);
+
 	}
 
 	@Override
@@ -80,6 +117,7 @@ public class CANMenu extends AppCompatActivity {
 		mode = 4;
 	}
 
+	@SuppressLint("SetTextI18n")
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data){
 		if(requestCode==SEND_MESSAGE){
@@ -88,7 +126,7 @@ public class CANMenu extends AppCompatActivity {
 				sendData(data.getIntArrayExtra("dataPackage"));
 			}
 			else{
-				viewInfo.setText("Ошибка onActivityResult 1");
+				viewInfo.setText("Error onActivityResult 1");
 			}
 			mode = 0;
 
@@ -98,7 +136,7 @@ public class CANMenu extends AppCompatActivity {
 				sendData(data.getIntArrayExtra("dataCAN"));
 			}
 			else{
-				viewInfo.setText("Ошибка onActivityResult 2");
+				viewInfo.setText("Error onActivityResult 2");
 			}
 			mode = 0;
 		}else{
@@ -112,8 +150,7 @@ public class CANMenu extends AppCompatActivity {
 			Intent intent = new Intent(this, CANSettingsActivity.class);
 			startActivityForResult(intent, CAN_SETTINGS_MESSAGE);
 		}catch(Exception e){
-			testsb.append(e.getMessage() + "\n");
-			testView.setText(testsb.toString());
+			errorMessage("goSetCANSettings", e);
 		}
 
 	}
@@ -127,9 +164,9 @@ public class CANMenu extends AppCompatActivity {
 	private void sendData(int[] data){
 		sb.append(viewInfo.getText());
 		try {
-			for(int i = 0; i < data.length; i++){
-				mConnectedThread.write(data[i]);
-				sb.append(data[i]).append("\n");
+			for (int datum : data) {
+				mConnectedThread.write(datum);
+				sb.append(datum).append("\n");
 			}
 			viewInfo.setText(sb.toString());
 		}catch (Exception e){
@@ -139,9 +176,9 @@ public class CANMenu extends AppCompatActivity {
 		sb.delete(0, sb.length());
 	}
 
-	private void pauseReceiver(){
-		mode = 4;
-	}
+	private void pauseReceiver(){mode = 4;}
+
+	private void resumeReceiver(){mode = 0;}
 
 	public void clearText(View view){
 		viewInfo.setText("");
@@ -156,39 +193,72 @@ public class CANMenu extends AppCompatActivity {
 		mode = 3;
 	}
 
-	public void disconnect(View view){
+	public void exit(View view){
 		Intent intent = new Intent(this, MainActivity.class);
 		intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
 		mConnectedThread.cancel();
+		mConnectedThread.interrupt();
+		mReceiverThread.interrupt();
 		startActivity(intent);
 		finish();
 	}
 
-	public void connectToHC(){
-		Bundle arguments = getIntent().getExtras();
-		String address = arguments.getString("address");
+	@SuppressLint("SetTextI18n")
+	public void disconnectHC(View view){
+		pauseReceiver();
+		mConnectedThread.cancel();
+		mConnectedThread.interrupt();
+		mReceiverThread.interrupt();
+
+		buttonSend.setEnabled(false);
+		buttonSettings.setEnabled(false);
+		buttonDisconnect.setEnabled(false);
+		buttonConnect.setEnabled((true));
+		connectInfo.setText("Нет подключения");
+	}
+
+	@SuppressLint("SetTextI18n")
+	public void connectToHC(View view){
 		BluetoothDevice device = btAdapter.getRemoteDevice(address);
+		BluetoothSocket btSocket;
 		try {
 			btSocket = device.createRfcommSocketToServiceRecord(MY_UUID);
 		} catch (IOException e) {
-			viewInfo.setText("Error: connectToHC 1: " + e.getMessage() + ".");
+			errorMessage("connectToHC 1", e);
+			return;
 		}
 		btAdapter.cancelDiscovery();
 
 		try {
 			btSocket.connect();
 		} catch (IOException e) {
+			errorMessage("connectToHC 2", e);
 			try {
 				btSocket.close();
 			} catch (IOException e2) {
-				viewInfo.setText("Error: connectToHC 2: " + e.getMessage() + ".");
+				errorMessage("connectToHC 3", e2);
+				return;
 			}
 		}
+
 		mConnectedThread = new ConnectedThread(btSocket);
 		mConnectedThread.start();
 		Toast.makeText(getBaseContext(), "connected start", Toast.LENGTH_LONG).show();
+
+
+		mReceiverThread = new ReceiverThread();
+		mReceiverThread.start();
+
+		buttonSend.setEnabled(true);
+		buttonSettings.setEnabled(true);
+		buttonDisconnect.setEnabled(true);
+		buttonConnect.setEnabled((false));
+		connectInfo.setText("Подключено");
+
+		resumeReceiver();
 	}
 
+	@SuppressLint("SetTextI18n")
 	private void ReceiveBytes(int am_b){
 		int cur_b = 0;
 		while(cur_b < am_b){
@@ -207,13 +277,14 @@ public class CANMenu extends AppCompatActivity {
 			}
 			byte1 <<=3;
 			byte1 |= byte2>>5;
+			sb.append("----- Начало пакета-----\n");
 			sb.append("Id = ").append(Integer.toHexString(byte1)).append("\n");
 			sb.append("DLC = ").append(length).append("\n");
 			for(int i = 0; i<length;i++){
 				sb.append(i).append(". ").append(Integer.toHexString(bytes[i])).append("\n");
 			}
 			viewInfo.setText("Прием " + am_b + "-го пакета окончен.");
-			sb.append("Прием окончен\n\n");
+			sb.append("----- Конец пакета -----\n\n");
 			sb.append(receiveInfo.getText()).append("\n");
 			receiveInfo.setText(sb.toString());
 			sb.delete(0, sb.length());
@@ -221,12 +292,10 @@ public class CANMenu extends AppCompatActivity {
 			cur_b++;
 		}
 
-
-
 		mode = 0;
-
 	}
 
+	@SuppressLint("SetTextI18n")
 	private void baseMode(){
 		int amount_bytes = getAmountByte();
 
@@ -236,7 +305,7 @@ public class CANMenu extends AppCompatActivity {
 			try{
 				ReceiveBytes(amount_bytes);
 			}catch (Exception e){
-				testView.setText(e.getMessage().toString());
+				errorMessage("baseMode", e);
 			}
 
 		} else if(amount_bytes == 0){
@@ -247,6 +316,7 @@ public class CANMenu extends AppCompatActivity {
 		mode = 0;
 	}
 
+	@SuppressLint("SetTextI18n")
 	private int getAmountByte(){
 		mConnectedThread.write(194);
 		mode = 4;
@@ -267,20 +337,22 @@ public class CANMenu extends AppCompatActivity {
 			}
 			return  -1;
 		}catch (Exception e){
-			testView.setText("Error: getAmountByte 1: " + e.getMessage() + ".");
+			errorMessage("getAmountByte", e);
 			return -1;
 		}
 	}
 
-	private void errorMessage(Exception e){
-		viewInfo.setText("Error: errorMessage 1: " + e.getMessage() + ".");
+	@SuppressLint("SetTextI18n")
+	private void errorMessage(String Label, Exception e){
+		testsb.append("Error: ").append(Label).append(": ").append(e.getMessage()).append(".\n");
+		errorView.setText(testsb.toString());
 	}
 
 	private class ReceiverThread extends Thread{
 
 		public void run() {
 			try{
-				while(true){
+				do {
 					switch (mode) {
 						case 0:
 							h.obtainMessage(BASE_MESSAGE).sendToTarget();
@@ -297,12 +369,9 @@ public class CANMenu extends AppCompatActivity {
 						default:
 					}
 					SystemClock.sleep(1000); //pause;
-					if(mode == 5){
-						break;
-					}
-				}
+				} while (mode != 5);
 			}catch (Exception e){
-				errorMessage(e);
+				errorMessage("run", e);
 			}
 		}
 	}
@@ -319,25 +388,19 @@ public class CANMenu extends AppCompatActivity {
 			try {
 				tmpIn = socket.getInputStream();
 				tmpOut = socket.getOutputStream();
-			} catch (IOException e) { }
+			} catch (IOException e) { errorMessage("ConnectedThread", e);}
 
 			mmInStream = tmpIn;
 			mmOutStream = tmpOut;
 		}
 
 		public void run() {
-//			byte[] buffer = new byte[256];
-//			int bytes;
 			while (true) {
 				try {
 					while(mmInStream.available()>0){
-//						bytes = mmInStream.read();
-//						if(bytes != 160) testsb.append(bytes + "\n");
 						data.add(mmInStream.read());
 						SystemClock.sleep(1);
 					}
-//					bytes = mmInStream.read(buffer);
-//					h.obtainMessage(RECIEVE_MESSAGE, bytes, -1, buffer).sendToTarget();
 				} catch (IOException e) {
 					break;
 				}
@@ -348,14 +411,14 @@ public class CANMenu extends AppCompatActivity {
 			try {
 				mmOutStream.write(message);
 			} catch (IOException e) {
-				errorMessage(e);
+				errorMessage("write", e);
 			}
 		}
 
 		public void cancel() {
 			try {
 				mmSocket.close();
-			} catch (IOException e) { }
+			} catch (IOException e) { errorMessage("cancel", e); }
 		}
 
 	}

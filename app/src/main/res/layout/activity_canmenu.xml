@@ -13,53 +13,90 @@
 
   <LinearLayout
       android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="horizontal" >
+      android:layout_height="match_parent"
+      android:orientation="horizontal">
 
-    <ScrollView
-      xmlns:android="http://schemas.android.com/apk/res/android"
-      android:id="@+id/activity_main"
-      android:layout_width="wrap_content"
-      android:layout_height="match_parent">
+    <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/activity_main"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent">
 
       <TextView
-        android:layout_marginTop="5dp"
-        android:id="@+id/receiveInfo"
-        android:layout_width="180dp"
-        android:layout_height="match_parent"
-        android:gravity="top"
-        android:background="#eee"/>
+          android:id="@+id/receiveInfo"
+          android:layout_width="180dp"
+          android:layout_height="match_parent"
+          android:layout_marginTop="5dp"
+          android:background="#eee"
+          android:gravity="top" />
 
     </ScrollView>
 
     <LinearLayout
         android:layout_width="wrap_content"
-      android:layout_height="match_parent"
-      android:orientation="vertical" >
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
       <Button
-        android:text="Очистить"
-        android:layout_height="wrap_content"
-        android:layout_width="190dp"
-        android:onClick="clearText"/>
-      <Button
-        android:text="Отправить пакет"
-        android:layout_height="wrap_content"
-        android:layout_width="190dp"
-        android:onClick="sendPackageOn"/>
+          android:id="@+id/buttonClear"
+          android:layout_width="190dp"
+          android:layout_height="wrap_content"
+          android:onClick="clearText"
+          android:text="Очистить" />
 
       <Button
-        android:text="Настроить CAN"
-        android:layout_height="wrap_content"
-        android:layout_width="190dp"
-        android:onClick="setCANSettings"/>
+          android:id="@+id/buttonSend"
+          android:layout_width="190dp"
+          android:layout_height="wrap_content"
+          android:onClick="sendPackageOn"
+          android:text="Отправить пакет" />
 
       <Button
+          android:id="@+id/buttonSettings"
+          android:layout_width="190dp"
+          android:layout_height="wrap_content"
+          android:onClick="setCANSettings"
+          android:text="Настроить CAN" />
+
+      <Button
+          android:id="@+id/buttonConnect"
           android:layout_width="match_parent"
           android:layout_height="wrap_content"
-          android:layout_marginTop="50dp"
-          android:onClick="disconnect"
-          android:text="Отключится" />
+          android:layout_marginTop="25dp"
+          android:onClick="connectToHC"
+          android:text="Подключиться к устройству" />
+
+      <Button
+          android:id="@+id/buttonDisconnect"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:onClick="disconnectHC"
+          android:text="Отключиться от устройства"
+          android:visibility="visible" />
+
+      <TextView
+          android:id="@+id/addressInfo"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="5dp"
+          android:background="#eee"
+          android:gravity="top" />
+
+      <TextView
+          android:id="@+id/connectInfo"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="5dp"
+          android:background="#eee"
+          android:gravity="top"
+          android:text="Нет подключения" />
+
+
+      <Button
+          android:id="@+id/buttonExit"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:onClick="exit"
+          android:text="Закрыть" />
 
       <ScrollView
           android:id="@+id/testScroll"
@@ -67,14 +104,14 @@
           android:layout_height="match_parent">
 
         <TextView
-            android:id="@+id/testView"
+            android:id="@+id/errorView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#eee"
-            android:text="Test" />
+            android:layout_marginTop="20px"
+            android:background="#aaa"
+            android:text="Errors:" />
 
       </ScrollView>
-
 
 
     </LinearLayout>

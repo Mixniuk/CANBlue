@@ -1,5 +1,6 @@
 package by.bsuir.canblue;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -12,7 +13,7 @@ public class SendPackageActivity extends AppCompatActivity {
 
 	EditText id, dlc, byte1, byte2, byte3, byte4, byte5, byte6, byte7, byte8;
   TextView info;
-	private StringBuilder sb = new StringBuilder();
+	private final StringBuilder sb = new StringBuilder();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +32,7 @@ public class SendPackageActivity extends AppCompatActivity {
 		byte8 = (EditText) findViewById(R.id.byte8);
 	}
 
+	@SuppressLint("SetTextI18n")
 	public void sendPackage(View view){
 
 		try {

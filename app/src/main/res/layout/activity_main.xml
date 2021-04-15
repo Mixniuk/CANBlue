@@ -9,9 +9,17 @@
       android:id="@+id/HC"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:text="Подключится"
+      android:text="Начать работу с устройством"
       android:layout_gravity="right"
       android:onClick="connectToHC"/>
+
+    <Button
+        android:id="@+id/buttonFind"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Поиск устройств"
+        android:layout_gravity="right"
+        android:onClick="findDev"/>
 
     <Button
       android:id="@+id/exit"

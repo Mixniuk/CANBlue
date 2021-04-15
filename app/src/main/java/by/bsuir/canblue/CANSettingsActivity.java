@@ -1,5 +1,6 @@
 package by.bsuir.canblue;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -14,7 +15,7 @@ public class CANSettingsActivity extends AppCompatActivity {
     TextView info;
     int speed = 16;
     EditText idH, idL, maskH, maskL;
-    private StringBuilder sb = new StringBuilder();
+    private final StringBuilder sb = new StringBuilder();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +29,7 @@ public class CANSettingsActivity extends AppCompatActivity {
         maskL = (EditText) findViewById(R.id.maskL);
     }
 
+    @SuppressLint("NonConstantResourceId")
     public void onRadioButtonClicked(View view) {
         boolean checked = ((RadioButton) view).isChecked();
         switch(view.getId()) {
@@ -53,7 +55,7 @@ public class CANSettingsActivity extends AppCompatActivity {
                 break;
         }
 
-        sb.append(speed + " ");
+        sb.append(speed).append(" ");
         info.setText(sb.toString());
     }
 
