@@ -12,16 +12,17 @@
     android:roundIcon="@mipmap/ic_launcher_round"
     android:supportsRtl="true"
     android:theme="@style/AppTheme">
-    <activity android:name=".MainActivity">
+    <activity android:name=".MainActivity" android:screenOrientation="portrait">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
 
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
     </activity>
-    <activity android:name=".CANMenu" />
-    <activity android:name=".CANSettingsActivity" />
-    <activity android:name=".SendPackageActivity" />
+    <activity android:name=".CANMenu" android:screenOrientation="portrait"/>
+    <activity android:name=".CANSettingsActivity" android:screenOrientation="portrait"/>
+    <activity android:name=".SendPackageActivity" android:screenOrientation="portrait"/>
+
   </application>
 
 </manifest>

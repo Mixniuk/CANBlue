@@ -37,8 +37,6 @@ public class SendPackageActivity extends AppCompatActivity {
 
 		try {
 			int data = Integer.parseInt(id.getText().toString(),16);
-			String s = byte1.getText().toString();
-			info.setText(s);
 
 			int[] bytes = {
 				Integer.parseInt(addZeros(byte1.getText().toString()), 16),

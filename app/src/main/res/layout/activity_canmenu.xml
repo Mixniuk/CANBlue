@@ -5,6 +5,14 @@
   android:orientation="vertical" >
 
   <TextView
+      android:id="@+id/settingsInfo"
+      android:layout_width="match_parent"
+      android:layout_height="20dp"
+      android:gravity="top"
+      android:background="#fff"
+      android:text="baud: 250; Filter: aaaa 0000 aaaa 0000" />
+
+  <TextView
     android:id="@+id/viewInfo"
     android:layout_width="match_parent"
     android:layout_height="50dp"
@@ -97,6 +105,14 @@
           android:layout_height="wrap_content"
           android:onClick="exit"
           android:text="Закрыть" />
+
+      <TextView
+          android:id="@+id/packsView"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="20px"
+          android:background="#ddd"
+          android:text="Принято пакетов:" />
 
       <ScrollView
           android:id="@+id/testScroll"

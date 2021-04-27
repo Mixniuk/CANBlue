@@ -7,7 +7,6 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.SystemClock;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -25,7 +24,7 @@ import java.util.UUID;
 
 public class CANMenu extends AppCompatActivity {
 
-	TextView viewInfo, receiveInfo, errorView, addressInfo, connectInfo;
+	TextView viewInfo, receiveInfo, errorView, addressInfo, connectInfo, settingsInfo, packsView;
 	Handler h;
 	Button buttonClear, buttonSend, buttonSettings, buttonConnect, buttonDisconnect, buttonExit;
 
@@ -34,7 +33,14 @@ public class CANMenu extends AppCompatActivity {
 	static final int CAN_SETTINGS_MESSAGE = 2;        // Статус для Handler
 	static final int SEND_MESSAGE = 3;
 
+	private int speed = 250;
+	private String idH = "aaaa";
+	private String idL = "aaaa";
+	private String maskH = "0000";
+	private String maskL = "0000";
+
 	private int mode = 4;
+	private int countPacks = 0;
 	private String address = null;
 	private final ArrayList<Integer> data = new ArrayList<>();
 	private BluetoothAdapter btAdapter = null;
@@ -87,13 +93,16 @@ public class CANMenu extends AppCompatActivity {
 		buttonExit = (Button) findViewById(R.id.buttonExit);
 
 		errorView = (TextView) findViewById(R.id.errorView);
+		packsView = (TextView) findViewById(R.id.packsView);
 	  	viewInfo = (TextView) findViewById(R.id.viewInfo);
+		settingsInfo = (TextView) findViewById(R.id.settingsInfo);
 		receiveInfo = (TextView) findViewById(R.id.receiveInfo);
 		addressInfo = (TextView) findViewById(R.id.addressInfo);
 		connectInfo = (TextView) findViewById(R.id.connectInfo);
 		btAdapter = BluetoothAdapter.getDefaultAdapter();
 
 		Bundle arguments = getIntent().getExtras();
+		assert arguments != null;
 		address = arguments.getString("address");
 		addressInfo.setText("address: " + address);
 
@@ -101,8 +110,7 @@ public class CANMenu extends AppCompatActivity {
 
 		buttonSend.setEnabled(false);
 		buttonSettings.setEnabled(false);
-		buttonDisconnect.setEnabled(false);
-
+//		buttonDisconnect.setEnabled(false);
 	}
 
 	@Override
@@ -114,7 +122,7 @@ public class CANMenu extends AppCompatActivity {
 	@Override
 	protected void onPause(){
 		super.onPause();
-		mode = 4;
+		pauseReceiver();
 	}
 
 	@SuppressLint("SetTextI18n")
@@ -133,9 +141,26 @@ public class CANMenu extends AppCompatActivity {
 		}else if(requestCode==CAN_SETTINGS_MESSAGE){
 			if(resultCode==RESULT_OK){
 				mConnectedThread.write(196);
-				sendData(data.getIntArrayExtra("dataCAN"));
+				int[] dat = data.getIntArrayExtra("dataCAN");
+				sendData(dat);
+				switch(dat[0]){
+					case 4: speed = 1000; break;
+					case 8: speed = 500; break;
+					case 16: speed = 250; break;
+					case 32: speed = 125; break;
+					default:
+				}
+
+				idH = addZeros(Integer.toHexString(dat[1])) + addZeros(Integer.toHexString(dat[2]));
+				maskH = addZeros(Integer.toHexString(dat[3])) + addZeros(Integer.toHexString(dat[4]));
+				idL = addZeros(Integer.toHexString(dat[5])) + addZeros(Integer.toHexString(dat[6]));
+				maskL = addZeros(Integer.toHexString(dat[7])) + addZeros(Integer.toHexString(dat[8]));
+
+				settingsInfo.setText("baud = " + speed + "; Filter: " + idH + " " + maskH + " " + idL + " " + maskL);
 			}
-			else{
+			else if(resultCode==RESULT_CANCELED) {
+				viewInfo.setText("Операция отменена");
+			}else {
 				viewInfo.setText("Error onActivityResult 2");
 			}
 			mode = 0;
@@ -148,6 +173,11 @@ public class CANMenu extends AppCompatActivity {
 		try{
 			pauseReceiver();
 			Intent intent = new Intent(this, CANSettingsActivity.class);
+			intent.putExtra("speed", speed);
+			intent.putExtra("idH", idH);
+			intent.putExtra("maskH", maskH);
+			intent.putExtra("idL", idL);
+			intent.putExtra("maskL", maskL);
 			startActivityForResult(intent, CAN_SETTINGS_MESSAGE);
 		}catch(Exception e){
 			errorMessage("goSetCANSettings", e);
@@ -162,13 +192,10 @@ public class CANMenu extends AppCompatActivity {
 	}
 
 	private void sendData(int[] data){
-		sb.append(viewInfo.getText());
 		try {
 			for (int datum : data) {
 				mConnectedThread.write(datum);
-				sb.append(datum).append("\n");
 			}
-			viewInfo.setText(sb.toString());
 		}catch (Exception e){
 			sb.append("Fatal Error: ").append(e.getMessage()).append(".\n");
 			viewInfo.setText(sb.toString());
@@ -183,6 +210,8 @@ public class CANMenu extends AppCompatActivity {
 	public void clearText(View view){
 		viewInfo.setText("");
 		receiveInfo.setText("");
+		packsView.setText("Количество принятых пакетов: 0");
+		countPacks = 0;
 	}
 
 	public void setCANSettings(View view){
@@ -212,8 +241,8 @@ public class CANMenu extends AppCompatActivity {
 
 		buttonSend.setEnabled(false);
 		buttonSettings.setEnabled(false);
-		buttonDisconnect.setEnabled(false);
-		buttonConnect.setEnabled((true));
+//		buttonDisconnect.setEnabled(false);
+//		buttonConnect.setEnabled((true));
 		connectInfo.setText("Нет подключения");
 	}
 
@@ -233,12 +262,13 @@ public class CANMenu extends AppCompatActivity {
 			btSocket.connect();
 		} catch (IOException e) {
 			errorMessage("connectToHC 2", e);
+			viewInfo.setText("Не удалось подключиться, попробуйте еще раз.");
 			try {
 				btSocket.close();
 			} catch (IOException e2) {
 				errorMessage("connectToHC 3", e2);
-				return;
 			}
+			return;
 		}
 
 		mConnectedThread = new ConnectedThread(btSocket);
@@ -251,8 +281,8 @@ public class CANMenu extends AppCompatActivity {
 
 		buttonSend.setEnabled(true);
 		buttonSettings.setEnabled(true);
-		buttonDisconnect.setEnabled(true);
-		buttonConnect.setEnabled((false));
+//		buttonDisconnect.setEnabled(true);
+//		buttonConnect.setEnabled((false));
 		connectInfo.setText("Подключено");
 
 		resumeReceiver();
@@ -260,37 +290,43 @@ public class CANMenu extends AppCompatActivity {
 
 	@SuppressLint("SetTextI18n")
 	private void ReceiveBytes(int am_b){
-		int cur_b = 0;
-		while(cur_b < am_b){
+		mConnectedThread.write(195);
 
-			mConnectedThread.write(195);
-
-			while(data.size() < 2)viewInfo.setText("Ожидание приема. Осталось " + am_b + " пакетов.");
-			int byte1 = data.remove(0);
-			int byte2 = data.remove(0);
-			int length = byte2&15;
-
-			short[] bytes = new short[8];
-			while(data.size() < length)viewInfo.setText("Ожидание приема. Осталось " + am_b + " пакетов.");
-			for(int i = 0; i < length; i++){
-				bytes[i] = data.remove(0).shortValue();
-			}
-			byte1 <<=3;
-			byte1 |= byte2>>5;
-			sb.append("----- Начало пакета-----\n");
-			sb.append("Id = ").append(Integer.toHexString(byte1)).append("\n");
-			sb.append("DLC = ").append(length).append("\n");
-			for(int i = 0; i<length;i++){
-				sb.append(i).append(". ").append(Integer.toHexString(bytes[i])).append("\n");
-			}
-			viewInfo.setText("Прием " + am_b + "-го пакета окончен.");
-			sb.append("----- Конец пакета -----\n\n");
-			sb.append(receiveInfo.getText()).append("\n");
-			receiveInfo.setText(sb.toString());
-			sb.delete(0, sb.length());
-
-			cur_b++;
+		long elapsedTime;
+		long startTime = System.currentTimeMillis();
+		viewInfo.setText("Ожидание приема. Осталось " + am_b + " пакетов.");
+		while (data.size() < 2) {
+			elapsedTime = (new Date()).getTime() - startTime;
+			if(elapsedTime < 5000) viewInfo.setText("Превышено ожидание приема. 1");
 		}
+
+		int byte1 = data.remove(0);
+		int byte2 = data.remove(0);
+		int length = byte2&15;
+
+		startTime = System.currentTimeMillis();
+		while (data.size() < length) {
+			elapsedTime = (new Date()).getTime() - startTime;
+			if(elapsedTime < 5000) viewInfo.setText("Превышено ожидание приема. 2");
+		}
+
+		short[] bytes = new short[8];
+		for(int i = 0; i < length; i++){
+			bytes[i] = data.remove(0).shortValue();
+		}
+		byte1 <<=3;
+		byte1 |= byte2>>5;
+		sb.append("----- Начало пакета-----\n");
+		sb.append("Id = ").append(Integer.toHexString(byte1)).append(" ").append("DLC = ").append(length).append("\n");
+		for(int i = 0; i < length; i++) sb.append(Integer.toHexString(bytes[i])).append(" ");
+		sb.append("\n\n");
+		viewInfo.setText("Прием " + am_b + "-го пакета окончен.");
+		sb.append(receiveInfo.getText());
+		receiveInfo.setText(sb.toString());
+		sb.delete(0, sb.length());
+
+		SystemClock.sleep(1);
+		packsView.setText("Количество принятых пакетов: " + countPacks++);
 
 		mode = 0;
 	}
@@ -319,7 +355,7 @@ public class CANMenu extends AppCompatActivity {
 	@SuppressLint("SetTextI18n")
 	private int getAmountByte(){
 		mConnectedThread.write(194);
-		mode = 4;
+		pauseReceiver();
 
 		Integer rem;
 
@@ -327,12 +363,12 @@ public class CANMenu extends AppCompatActivity {
 			long startTime = System.currentTimeMillis();
 			long elapsedTime = 0;
 
-			while (elapsedTime < 1000) {
+			while (elapsedTime < 5000) {
 				elapsedTime = (new Date()).getTime() - startTime;
 				if (data.size() > 0) {
 					rem = data.remove(0);
-					if (rem == null) return 0;
-					else return rem;
+					if (rem != null) return rem;
+					else mConnectedThread.write(194);
 				}
 			}
 			return  -1;
@@ -346,6 +382,19 @@ public class CANMenu extends AppCompatActivity {
 	private void errorMessage(String Label, Exception e){
 		testsb.append("Error: ").append(Label).append(": ").append(e.getMessage()).append(".\n");
 		errorView.setText(testsb.toString());
+	}
+
+	private String addZeros(String str){
+		if(str.length() < 2){
+			sb.delete(0, sb.length());
+			sb.append(str);
+			while(sb.length() < 2){
+				sb.insert(0,"0");
+			}
+			return sb.toString();
+		} else {
+			return str;
+		}
 	}
 
 	private class ReceiverThread extends Thread{

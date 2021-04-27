@@ -1,3 +1,9 @@
 <resources>
   <string name="app_name">CANBlue</string>
+    <string name="id_high">ID фильтра HIGH</string>
+  <string name="idH_value">AAAA</string>
+  <string name="maskH_name">Маска фильтра HIGH</string>
+  <string name="maskH_value">0000</string>
+  <string name="idL_name">ID фильтра LOW</string>
+  <string name="idL_value">AAAA</string>
 </resources>
